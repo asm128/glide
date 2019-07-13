@@ -36,7 +36,7 @@
 		for(uint32_t iChild = 0; iChild < node.Children.size(); iChild += 2) { 
 			uint32_t											indexKey								= node.Children[iChild + 0]->ObjectIndex;
 			uint32_t											indexVal								= node.Children[iChild + 1]->ObjectIndex;
-			if(database.Reader.View[indexKey] == fieldsToExpand[0]) {
+			if(database.Reader.View[indexKey] == fieldsToExpand[0] && ::gpk::JSON_TYPE_NULL != database.Reader.Tree[indexVal]->Object->Type) {
 				::gpk::jsonWrite(database.Reader.Tree[indexKey], database.Reader.View, output);
 				output.push_back(':');
 				output.append(::gpk::view_const_string{"\"Insert "});
