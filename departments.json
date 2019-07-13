@@ -1,26 +1,1 @@
-[
-	{
-		"id": 1,
-		"name": "Sales",
-		"superdepartment": null
-	},
-	{
-		"id": 3,
-		"name": "Product",
-		"superdepartment": null
-	},
-	{
-		"id": 4,
-		"name": "Design",
-		"superdepartment": 3
-	},	{
-		"id": 5,
-		"name": "Inbound Sales",
-		"superdepartment": 1
-	},
-	{
-		"id": 6,
-		"name": "Outbound Sales",
-		"superdepartment": 1
-	}
-]
+[{"id":1,"name":"Sales","superdepartment":null},{"id":3,"name":"Product","superdepartment":null},{"id":4,"name":"Design","superdepartment":3},{"id":5,"name":"Inbound Sales","superdepartment":1},{"id":6,"name":"Outbound Sales","superdepartment":1}]

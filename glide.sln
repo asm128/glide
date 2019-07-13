@@ -17,6 +17,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "departments", "departments\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "offices", "offices\offices.vcxproj", "{CB2B338A-0B29-4B2B-B7F9-56B68658D4D2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C42BE990-3407-44A6-A5D0-40FD23966DFE}"
+	ProjectSection(SolutionItems) = preProject
+		copy_json.bat = copy_json.bat
+		departments.json = departments.json
+		employees.json = employees.json
+		offices.json = offices.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
