@@ -21,7 +21,7 @@ GPK_CGI_JSON_APP_IMPL();																																							\
 	}																																												\
 	gpk_necall(::glide::databaseLoad(app.Databases), "%s", "Failed to load glide databases.");																						\
 	gpk_necall(::glide::queryLoad(app.Query, runtimeValues.QueryStringKeyVals), "%s", "Failed to load glide databases.");															\
-	gpk_necall(::glide::generate_output_for_db(app, "employees", output), "%s", "Failed to load glide databases.");																	\
+	gpk_necall(::glide::generate_output_for_db(app, _endpointName, output), "%s", "Failed to load glide databases.");																\
 	return 0;																																										\
 }
 
