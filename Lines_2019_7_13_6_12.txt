@@ -1,0 +1,82 @@
+File name: main.cpp
+File folder: C:\asm128_test\glide\departments
+File creation date: Sat Jul 13 04:47:50 2019
+File modification date: Sat Jul 13 06:10:33 2019
+File code lines: 1
+File directive lines: 1
+File comment lines: 0
+File blank lines: 1
+File bytes: 62
+
+File name: main.cpp
+File folder: C:\asm128_test\glide\employees
+File creation date: Fri Jul 12 21:34:23 2019
+File modification date: Sat Jul 13 06:10:03 2019
+File code lines: 1
+File directive lines: 1
+File comment lines: 0
+File blank lines: 1
+File bytes: 60
+
+File name: glide.cpp
+File folder: C:\asm128_test\glide\glide
+File creation date: Fri Jul 12 22:51:50 2019
+File modification date: Sat Jul 13 06:05:15 2019
+File code lines: 67
+File directive lines: 1
+File comment lines: 0
+File blank lines: 21
+File bytes: 3966
+
+File name: glide.h
+File folder: C:\asm128_test\glide\glide
+File creation date: Fri Jul 12 23:13:28 2019
+File modification date: Sat Jul 13 04:47:06 2019
+File code lines: 17
+File directive lines: 5
+File comment lines: 0
+File blank lines: 17
+File bytes: 1137
+
+File name: glide_endpoint.h
+File folder: C:\asm128_test\glide\glide
+File creation date: Sat Jul 13 06:06:56 2019
+File modification date: Sat Jul 13 06:12:06 2019
+File code lines: 8
+File directive lines: 6
+File comment lines: 0
+File blank lines: 6
+File bytes: 991
+
+File name: main.cpp
+File folder: C:\asm128_test\glide\offices
+File creation date: Sat Jul 13 04:47:50 2019
+File modification date: Sat Jul 13 06:10:24 2019
+File code lines: 1
+File directive lines: 1
+File comment lines: 0
+File blank lines: 1
+File bytes: 58
+
+
+----------------------------- Total Files: 6
+----------------------------- Total Lines: 157
+
+Comments: 0
+Code: 95
+Compiler directives: 15
+Blanks: 47
+Total bytes: 6274
+
+----------------------------- Stats: 
+
+Average lines per file: 26.166666666666668
+Average lines of comments per file: 0.0
+Average lines of code per file: 15.833333333333334
+Average lines of compiler directives per file: 2.5
+Average blank lines per file: 7.833333333333333
+
+Comments: 0.0%
+Code: 60.509554140127385%
+Compiler directives: 9.554140127388534%
+Blanks: 29.936305732484076%

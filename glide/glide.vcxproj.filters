@@ -23,5 +23,8 @@
     <ClInclude Include="glide.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="glide_endpoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

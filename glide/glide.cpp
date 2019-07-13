@@ -78,7 +78,7 @@
 			::gpk::array_obj<::gpk::view_const_char>			fieldsToExpand;
 			::gpk::split(app.Query.Expand, '.', fieldsToExpand);
 			for(uint32_t iRecord = app.Query.Range.Offset; iRecord < stopRecord; ++iRecord) {
-				generate_record_with_expansion(app.Databases[indexDB].Val, jsonRoot.Children[iRecord]->ObjectIndex, output, fieldsToExpand);
+				::generate_record_with_expansion(app.Databases[indexDB].Val, jsonRoot.Children[iRecord]->ObjectIndex, output, fieldsToExpand);
 				if((stopRecord - 1) > iRecord)
 					output.push_back(',');
 			}
