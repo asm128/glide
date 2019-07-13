@@ -2,7 +2,7 @@
 
 #include "gpk_stdstring.h"
 
-static	const ::gpk::TKeyValConstString			g_DataBases	[]					=	// pair of name/alias
+static	const ::gpk::TKeyValConstString			g_DataBases	[]					=	// pair of database name/alias
 	{	{"offices"		, "office"			}
 	,	{"employees"	, "employee"		}	
 	,	{"departments"	, "superdepartment"	}
@@ -30,7 +30,7 @@ static	const ::gpk::TKeyValConstString			g_DataBases	[]					=	// pair of name/al
 	return 0;
 }
 
-static	::gpk::error_t							generate_record_with_expansion			(::gpk::view_array<::glide::TKeyValDB> & databases, ::gpk::SJSONFile & database, uint32_t iRecord, ::gpk::array_pod<char_t> & output, const ::gpk::view_array<::gpk::view_const_char> & fieldsToExpand)	{
+static	::gpk::error_t							generate_record_with_expansion			(::gpk::view_array<::glide::TKeyValDB> & databases, ::gpk::SJSONFile & database, uint32_t iRecord, ::gpk::array_pod<char_t> & output, const ::gpk::view_array<const ::gpk::view_const_char> & fieldsToExpand)	{
 	::gpk::SJSONNode									& node									= *database.Reader.Tree[iRecord];
 	if(0 == fieldsToExpand.size() || ::gpk::JSON_TYPE_OBJECT != node.Object->Type)
 		::gpk::jsonWrite(&node, database.Reader.View, output);
@@ -56,11 +56,10 @@ static	::gpk::error_t							generate_record_with_expansion			(::gpk::view_array<
 								::gpk::jsonWrite(database.Reader.Tree[indexVal], database.Reader.View, output);
 						}
 						else {
-							output.append(::gpk::view_const_string{"\"Insert next "});
-							output.append(database.Reader.View[indexKey]);
-							output.append(::gpk::view_const_string{" "});
-							output.append(database.Reader.View[indexVal]);
-							output.append(::gpk::view_const_string{" query result here\""});
+							if(indexRecordToExpand < childDatabase.Val.Reader.Tree[0]->Children.size())
+								::generate_record_with_expansion(databases, childDatabase.Val, childDatabase.Val.Reader.Tree[0]->Children[(uint32_t)indexRecordToExpand]->ObjectIndex, output, {&fieldsToExpand[1], fieldsToExpand.size()-1});
+							else
+								::gpk::jsonWrite(database.Reader.Tree[indexVal], database.Reader.View, output);
 						}
 						bSolved											= true;
 					}
