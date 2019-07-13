@@ -21,22 +21,22 @@ File bytes: 60
 File name: glide.cpp
 File folder: C:\asm128_test\glide\glide
 File creation date: Fri Jul 12 22:51:50 2019
-File modification date: Sat Jul 13 06:05:15 2019
-File code lines: 67
-File directive lines: 1
+File modification date: Sat Jul 13 13:19:52 2019
+File code lines: 80
+File directive lines: 2
 File comment lines: 0
-File blank lines: 21
-File bytes: 3966
+File blank lines: 29
+File bytes: 5264
 
 File name: glide.h
 File folder: C:\asm128_test\glide\glide
 File creation date: Fri Jul 12 23:13:28 2019
-File modification date: Sat Jul 13 04:47:06 2019
-File code lines: 17
+File modification date: Sat Jul 13 13:03:16 2019
+File code lines: 13
 File directive lines: 5
 File comment lines: 0
-File blank lines: 17
-File bytes: 1137
+File blank lines: 15
+File bytes: 977
 
 File name: glide_endpoint.h
 File folder: C:\asm128_test\glide\glide
@@ -60,23 +60,23 @@ File bytes: 58
 
 
 ----------------------------- Total Files: 6
------------------------------ Total Lines: 157
+----------------------------- Total Lines: 173
 
 Comments: 0
-Code: 95
-Compiler directives: 15
-Blanks: 47
-Total bytes: 6274
+Code: 104
+Compiler directives: 16
+Blanks: 53
+Total bytes: 7412
 
 ----------------------------- Stats: 
 
-Average lines per file: 26.166666666666668
+Average lines per file: 28.833333333333332
 Average lines of comments per file: 0.0
-Average lines of code per file: 15.833333333333334
-Average lines of compiler directives per file: 2.5
-Average blank lines per file: 7.833333333333333
+Average lines of code per file: 17.333333333333332
+Average lines of compiler directives per file: 2.6666666666666665
+Average blank lines per file: 8.833333333333334
 
 Comments: 0.0%
-Code: 60.509554140127385%
-Compiler directives: 9.554140127388534%
-Blanks: 29.936305732484076%
+Code: 60.11560693641619%
+Compiler directives: 9.248554913294798%
+Blanks: 30.63583815028902%
