@@ -2,6 +2,7 @@
 
 #include "gpk_stdstring.h"
 #include "gpk_process.h"
+#include "gpk_storage.h"
 
 ::gpk::error_t									glide::validateMethod					(const ::gpk::view_const_string & method)	{
 	::gpk::array_pod<char_t>							environmentBlock; 
@@ -17,6 +18,27 @@
 	}
 	return 0;
 }
+
+::gpk::error_t									glide::loadCWD							(::gpk::array_pod<char_t> & cwd)	{
+	::gpk::array_pod<char_t>							environmentBlock; 
+	::gpk::array_obj<::gpk::TKeyValConstString>			environViews;
+	::gpk::environmentBlockFromEnviron(environmentBlock);
+	::gpk::environmentBlockViews(environmentBlock, environViews);
+	for(uint32_t iKey = 0; iKey < environViews.size(); ++iKey) {
+		if(environViews[iKey].Key == ::gpk::view_const_string{"SCRIPT_FILENAME"}) {
+			cwd = environViews[iKey].Val;
+			int32_t lastBarIndex = ::gpk::findLastSlash({cwd.begin(), cwd.size()});
+			if(-1 != lastBarIndex) {
+				cwd[lastBarIndex]		= 0;
+				cwd.resize(lastBarIndex);
+				break;
+			}
+		}
+	}
+	//"" : "C:/asm128_test/x64.Debug/test_cgi_environ.exe"
+	return 0;
+}
+
 
 ::gpk::error_t									glide::loadDetail						(int32_t & detail)	{
 	::gpk::array_pod<char_t>							environmentBlock; 
@@ -40,8 +62,141 @@ static	const ::gpk::TKeyValConstString			g_DataBases	[]							=	// pair of datab
 	,	{"departments"	, "superdepartment"	}
 	};
 
-::gpk::error_t									glide::loadDatabase						(::gpk::array_obj<::glide::TKeyValDB> & dbs)		{
+#include "gpk_stdsocket.h"
+
+static	::gpk::error_t								handleReadable(HANDLE handle){
+	fd_set															sockets								= {};
+	memset(&sockets, -1, sizeof(fd_set));
+	sockets.fd_count											= 0;
+	sockets.fd_array[sockets.fd_count]							= (SOCKET)handle;
+	if(sockets.fd_array[sockets.fd_count] != INVALID_SOCKET)
+		++sockets.fd_count;
+	timeval															wait_time							= {0, 1000};
+	select(0, &sockets, 0, 0, &wait_time);
+	if(1 == sockets.fd_count && sockets.fd_array[0] == (SOCKET)handle)
+		return 1;
+	return 0;
+}
+
+static	::gpk::error_t								readFromPipe			(::glide::SThreadStateRead & appState)	{	// Read output from the child process's pipe for STDOUT and write to the parent process's pipe for STDOUT. Stop when there is no more data. 
+	const ::glide::SProcess									& process				= appState.Process;
+	const ::glide::SProcessHandles							& handles				= appState.IOHandles;
+	::gpk::array_pod<byte_t>								& readBytes				= appState.ReadBytes;
+
+	//char													chBuf	[BUFSIZE]		= {}; 
+	static	::gpk::array_pod<char_t>						chBuf;
+	static constexpr	const uint32_t						BUFSIZE					= 1024 * 1024;
+	chBuf.resize(BUFSIZE);
+	bool													bSuccess				= FALSE;
+	while(true) { 
+		uint32_t											dwRead					= 0;
+		if(handleReadable(handles.ChildStd_OUT_Read)) {
+			bSuccess										= ReadFile(handles.ChildStd_OUT_Read, chBuf.begin(), chBuf.size(), (DWORD*)&dwRead, NULL);
+			ree_if(false == bSuccess, "Failed to read from child process' standard output."); 
+			if(0 == dwRead) {
+				gpk_sync_increment(appState.DoneReading);
+				break; 
+			}
+			readBytes.append(chBuf.begin(), dwRead);
+		}
+		DWORD												exitCode				= 0;
+		GetExitCodeProcess(process.ProcessInfo.hProcess, &exitCode);
+		if(STILL_ACTIVE != exitCode && 0 == handleReadable(handles.ChildStd_OUT_Read))
+			break; 
+		char												bufferFormat	[128]	= {};
+		sprintf_s(bufferFormat, "Process output: %%.%us", dwRead);
+		info_printf(bufferFormat, chBuf.begin());
+		if(0 == readBytes[readBytes.size() - 1])
+			break;
+	}
+	return 0;
+}
+
+static	void										threadReadFromPipe		(void* appStaet)	{	// Read output from the child process's pipe for STDOUT and write to the parent process's pipe for STDOUT. Stop when there is no more data. 
+	::readFromPipe(*(::glide::SThreadStateRead*)appStaet);
+}
+
+static ::gpk::error_t								initHandles				(::glide::SProcessHandles & handles) { 
+	SECURITY_ATTRIBUTES										saAttr					= {};
+	saAttr.bInheritHandle								= TRUE;		// Set the bInheritHandle flag so pipe handles are inherited. 
+	saAttr.lpSecurityDescriptor							= NULL; 
+	ree_if(false == (bool)CreatePipe			(&handles.ChildStd_OUT_Read, &handles.ChildStd_OUT_Write, &saAttr, 0)	, "StdoutRd CreatePipe: '%s'."			, "Failed to create a pipe for the child process's STDOUT."); 
+	ree_if(false == (bool)SetHandleInformation	(handles.ChildStd_OUT_Read, HANDLE_FLAG_INHERIT, 0)						, "Stdout SetHandleInformation: '%s'."	, "Failed to ensure the read handle to the pipe for STDOUT is not inherited."); 
+	ree_if(false == (bool)CreatePipe			(&handles.ChildStd_ERR_Read, &handles.ChildStd_ERR_Write, &saAttr, 0)	, "StdoutRd CreatePipe: '%s'."			, "Failed to create a pipe for the child process's STDOUT."); 
+	ree_if(false == (bool)SetHandleInformation	(handles.ChildStd_ERR_Read, HANDLE_FLAG_INHERIT, 0)						, "Stdout SetHandleInformation: '%s'."	, "Failed to ensure the read handle to the pipe for STDOUT is not inherited."); 
+	ree_if(false == (bool)CreatePipe			(&handles.ChildStd_IN_Read, &handles.ChildStd_IN_Write, &saAttr, 0)		, "Stdin CreatePipe: '%s'."				, "Failed to create a pipe for the child process's STDIN.");
+	ree_if(false == (bool)SetHandleInformation	(handles.ChildStd_IN_Write, HANDLE_FLAG_INHERIT, 0)						, "Stdin SetHandleInformation: '%s'."	, "Failed to ensure the write handle to the pipe for STDIN is not inherited."); 
+	return 0;	// The remaining open handles are cleaned up when this process terminates. To avoid resource leaks in a larger application, close handles explicitly. 
+} 
+
+static	::gpk::error_t								createChildProcess		
+	(	::glide::SProcess				& process
+	,	::gpk::view_array<char_t>		environmentBlock
+	,	::gpk::view_char				appPath
+	,	::gpk::view_char				commandLine
+	) {	// Create a child process that uses the previously created pipes for STDIN and STDOUT.
+	bool													bSuccess				= false; 
+	static constexpr const bool								isUnicodeEnv			= false;
+	static constexpr const uint32_t							creationFlags			= (isUnicodeEnv ? CREATE_UNICODE_ENVIRONMENT : 0);
+	gpk_safe_closehandle(process.ProcessInfo.hProcess);
+	bSuccess											= CreateProcessA
+		( appPath.begin()	// Create the child process. 
+		, commandLine.begin()		// command line 
+		, nullptr					// process security attributes 
+		, nullptr					// primary thread security attributes 
+		, true						// handles are inherited 
+		, creationFlags				// creation flags 
+		, environmentBlock.begin()	// use parent's environment 
+		, NULL						// use parent's current directory 
+		, &process.StartInfo		// STARTUPINFO pointer 
+		, &process.ProcessInfo
+		) ? true : false;  // receives PROCESS_INFORMATION 
+	ree_if(false == bSuccess, "Failed to create process: '%s'.", appPath.begin());
+	info_printf("Creating process '%s' with command line '%s'", appPath.begin(), commandLine.begin());
+	return 0;
+}
+
+::gpk::error_t									glide::loadDatabase						(::glide::SGlideApp & appState)		{
+	::gpk::array_obj<::glide::TKeyValDB>				& dbs									= appState.Databases;
+	::glide::SQuery										& query									= appState.Query;
+	query.Expand;
 	dbs.resize(::gpk::size(g_DataBases));
+	::gpk::array_pod<char_t>							szCmdlineApp							= "C:\\Python37\\python.exe";
+#define DOBLE_COMILLA
+#ifdef DOBLE_COMILLA
+	::gpk::array_pod<char_t>							szCmdlineFinal							= ::gpk::view_const_string{"C:\\Python37\\python.exe -c \"import requests; host = \"\"https://rfy56yfcwk.execute-api.us-west-1.amazonaws.com/bigcorp/employees\"\"; r = requests.get(host, \"\"\"\"); f = open(\"\""};
+	szCmdlineFinal.append(appState.CWD);
+	szCmdlineFinal.append(::gpk::view_const_string{"/employees.json\"\", \"\"w\"\"); f.write(str(r.text)); f.close();\""});
+#else
+	::gpk::array_pod<char_t>							szCmdlineFinal							= ::gpk::view_const_string{"C:\\Python37\\python.exe -c \"import requests; host = \"https://rfy56yfcwk.execute-api.us-west-1.amazonaws.com/bigcorp/employees\"; r = requests.get(host, \"\"); f = open(\""};
+	szCmdlineFinal.append(appState.CWD);
+	szCmdlineFinal.append(::gpk::view_const_string{"/employees.json\", \"w\"); f.write(str(r.text)); f.close();"});
+#endif
+	{	// llamar proceso
+		::initHandles(appState.ThreadState.IOHandles);
+		appState.ThreadState.Process.StartInfo.hStdError	= appState.ThreadState.IOHandles.ChildStd_ERR_Write;
+		appState.ThreadState.Process.StartInfo.hStdOutput	= appState.ThreadState.IOHandles.ChildStd_OUT_Write;
+		appState.ThreadState.Process.StartInfo.hStdInput	= appState.ThreadState.IOHandles.ChildStd_IN_Read;
+		appState.ThreadState.Process.ProcessInfo.hProcess	= INVALID_HANDLE_VALUE;
+		appState.ThreadState.Process.StartInfo.dwFlags		|= STARTF_USESTDHANDLES;
+		::gpk::array_pod<char_t>							environmentBlock; 
+		::gpk::environmentBlockFromEnviron(environmentBlock);
+		gerror_if(errored(::createChildProcess(appState.ThreadState.Process, environmentBlock, szCmdlineApp, szCmdlineFinal)), "Failed to create child process: %s.", szCmdlineApp.begin());	// Create the child process. 
+		_beginthread(::threadReadFromPipe, 0, &appState.ThreadState);
+		SThreadStateRead										state;
+		while(false == gpk_sync_compare_exchange(state.DoneReading, true, true)) {
+			DWORD												exitCode				= 0;
+			GetExitCodeProcess(appState.ThreadState.Process.ProcessInfo.hProcess, &exitCode);
+			if(STILL_ACTIVE != exitCode)
+				break; 
+			::gpk::sleep(5);
+		}
+		gpk_safe_closehandle(appState.ThreadState.Process.StartInfo.hStdError	);
+		gpk_safe_closehandle(appState.ThreadState.Process.StartInfo.hStdInput	);
+		gpk_safe_closehandle(appState.ThreadState.Process.StartInfo.hStdOutput	);
+		gpk_safe_closehandle(appState.ThreadState.Process.ProcessInfo.hProcess	);
+	}
+	info_printf("");
 	for(uint32_t iDatabase = 0; iDatabase < ::gpk::size(g_DataBases); ++iDatabase) { 
 		dbs[iDatabase].Key								= g_DataBases[iDatabase].Key;
 		::gpk::array_pod<char_t>							filename								= g_DataBases[iDatabase].Key;
@@ -78,6 +233,7 @@ static	::gpk::error_t							generate_record_with_expansion			(::gpk::view_array<
 				bool												bSolved									= false;
 				uint64_t											indexRecordToExpand						= 0;
 				::gpk::stoull(database.Reader.View[indexVal], &indexRecordToExpand);
+				--indexRecordToExpand;
 				for(uint32_t iDatabase = 0; iDatabase < databases.size(); ++iDatabase) {
 					::glide::TKeyValDB									& childDatabase							= databases[iDatabase];
 					if(::gpk::view_const_char{childDatabase.Key.begin(), childDatabase.Key.size()-1} == fieldToExpand || g_DataBases[iDatabase].Val == fieldToExpand) {
@@ -117,6 +273,8 @@ static	::gpk::error_t							generate_record_with_expansion			(::gpk::view_array<
 	::gpk::SJSONReader									& dbReader								= app.Databases[indexDB].Val.Reader;
 	::gpk::SJSONNode									& jsonRoot								= *app.Databases[indexDB].Val.Reader.Tree[0];
 	if(detail != -1) { // display detail
+		if(detail > 0) 
+			--detail;
 		if(0 == app.Query.Expand.size() && ((uint32_t)detail) >= jsonRoot.Children.size())
 			::gpk::jsonWrite(&jsonRoot, dbReader.View, output);
 		else {

@@ -19,8 +19,9 @@ GPK_CGI_JSON_APP_IMPL();																																							\
 		output.append(::gpk::view_const_string{"{ \"status\" : 403, \"description\" :\"forbidden\" }\r\n"});																		\
 		return 1;																																									\
 	}																																												\
-	gpk_necall(::glide::loadDatabase(app.Databases), "%s", "Failed to load glide databases.");																						\
+	gpk_necall(::glide::loadCWD(app.CWD), "%s", "Failed to load query.");																										\
 	gpk_necall(::glide::loadQuery(app.Query, runtimeValues.QueryStringKeyVals), "%s", "Failed to load query.");																		\
+	gpk_necall(::glide::loadDatabase(app), "%s", "Failed to load glide databases.");																								\
 	int32_t												detail							= -1;																						\
 	gpk_necall(::glide::loadDetail(detail), "%s", "Failed to load detail.");																										\
 	gpk_necall(::glide::generate_output_for_db(app, _endpointName, detail, output), "%s", "Failed to load glide databases.");														\
