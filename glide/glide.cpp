@@ -2,28 +2,28 @@
 
 #include "gpk_stdstring.h"
 
-static	const ::gpk::view_const_string			g_databases	[]					= 
-	{	"offices"	
-	,	"employees"	
-	,	"departments"
+static	const ::gpk::TKeyValConstString			g_DataBases	[]					=	// pair of name/alias
+	{	{"offices"		, "office"			}
+	,	{"employees"	, "employee"		}	
+	,	{"departments"	, "superdepartment"	}
 	};
 
-::gpk::error_t									glide::databaseLoad				(::gpk::array_obj<::glide::TKeyValDB> & dbs)		{
-	dbs.resize(::gpk::size(g_databases));
-	for(uint32_t iDatabase = 0; iDatabase < ::gpk::size(g_databases); ++iDatabase) { 
-		dbs[iDatabase].Key								= g_databases[iDatabase];
-		::gpk::array_pod<char_t>							filename						= g_databases[iDatabase];
+::gpk::error_t									glide::databaseLoad						(::gpk::array_obj<::glide::TKeyValDB> & dbs)		{
+	dbs.resize(::gpk::size(g_DataBases));
+	for(uint32_t iDatabase = 0; iDatabase < ::gpk::size(g_DataBases); ++iDatabase) { 
+		dbs[iDatabase].Key								= g_DataBases[iDatabase].Key;
+		::gpk::array_pod<char_t>							filename								= g_DataBases[iDatabase].Key;
 		filename.append(".json");
 		gpk_necall(::gpk::jsonFileRead(dbs[iDatabase].Val, {filename.begin(), filename.size()}), "Failed to load json database file: %s.", filename.begin());
 	}
 	return 0;
 }
 
-::gpk::error_t									glide::queryLoad					(::glide::SQuery& query, const ::gpk::view_array<const ::gpk::TKeyValConstString> keyvals)	{
+::gpk::error_t									glide::queryLoad						(::glide::SQuery& query, const ::gpk::view_array<const ::gpk::TKeyValConstString> keyvals)	{
 	::gpk::keyvalNumeric("offset"	, keyvals, query.Range.Offset	);
 	::gpk::keyvalNumeric("limit"	, keyvals, query.Range.Count	);
 	{
-		::gpk::error_t										indexExpand							= ::gpk::find("expand", keyvals);
+		::gpk::error_t										indexExpand								= ::gpk::find("expand", keyvals);
 		if(-1 != indexExpand) 
 			query.Expand									= keyvals[indexExpand].Val;
 	}
@@ -47,13 +47,13 @@ static	::gpk::error_t							generate_record_with_expansion			(::gpk::view_array<
 				uint64_t											indexRecordToExpand						= 0;
 				::gpk::stoull(database.Reader.View[indexVal], &indexRecordToExpand);
 				for(uint32_t iDatabase = 0; iDatabase < databases.size(); ++iDatabase) {
-					if(::gpk::view_const_char{databases[iDatabase].Key.begin(), databases[iDatabase].Key.size()-1} == fieldToExpand) {
+					::glide::TKeyValDB									& childDatabase							= databases[iDatabase];
+					if(::gpk::view_const_char{childDatabase.Key.begin(), childDatabase.Key.size()-1} == fieldToExpand || g_DataBases[iDatabase].Val == fieldToExpand) {
 						if(1 >= fieldsToExpand.size()) {
-							if(indexRecordToExpand < databases[iDatabase].Val.Reader.Tree[0]->Children.size())
-								::gpk::jsonWrite(databases[iDatabase].Val.Reader.Tree[0]->Children[(uint32_t)indexRecordToExpand], databases[iDatabase].Val.Reader.View, output);
+							if(indexRecordToExpand < childDatabase.Val.Reader.Tree[0]->Children.size())
+								::gpk::jsonWrite(childDatabase.Val.Reader.Tree[0]->Children[(uint32_t)indexRecordToExpand], childDatabase.Val.Reader.View, output);
 							else
 								::gpk::jsonWrite(database.Reader.Tree[indexVal], database.Reader.View, output);
-								//output.append(::gpk::view_const_string{"null"});
 						}
 						else {
 							output.append(::gpk::view_const_string{"\"Insert next "});

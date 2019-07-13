@@ -6,12 +6,6 @@
 
 namespace glide
 {
-	struct SDatabases {
-		::gpk::SJSONFile								JSONOffices					= {};
-		::gpk::SJSONFile								JSONEmployees				= {};
-		::gpk::SJSONFile								JSONDepartments				= {};
-	};
-
 	typedef ::gpk::SKeyVal<::gpk::view_const_string, ::gpk::SJSONFile> TKeyValDB;
 
 	::gpk::error_t									databaseLoad				(::gpk::array_obj<::glide::TKeyValDB> & dbs);
