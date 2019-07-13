@@ -1,3 +1,3 @@
 #include "glide_endpoint.h"
 
-GLIDE_ENDPOINT_IMPL("offices");
+GLIDE_READONLY_ENDPOINT_IMPL("offices");

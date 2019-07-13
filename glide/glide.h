@@ -8,6 +8,7 @@ namespace glide
 {
 	typedef ::gpk::SKeyVal<::gpk::view_const_string, ::gpk::SJSONFile> TKeyValDB;
 
+	::gpk::error_t									validateMethod				(const ::gpk::view_const_string & method);
 	::gpk::error_t									databaseLoad				(::gpk::array_obj<::glide::TKeyValDB> & dbs);
 
 	static constexpr const uint32_t					MAX_TABLE_RECORD_COUNT		= 0x7FFFFFFF;
