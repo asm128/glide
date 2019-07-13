@@ -7,9 +7,9 @@
 namespace glide
 {
 	typedef ::gpk::SKeyVal<::gpk::view_const_string, ::gpk::SJSONFile> TKeyValDB;
-
 	::gpk::error_t									validateMethod				(const ::gpk::view_const_string & method);
-	::gpk::error_t									databaseLoad				(::gpk::array_obj<::glide::TKeyValDB> & dbs);
+	::gpk::error_t									loadDetail					(int32_t & detail);
+	::gpk::error_t									loadDatabase				(::gpk::array_obj<::glide::TKeyValDB> & dbs);
 
 	static constexpr const uint32_t					MAX_TABLE_RECORD_COUNT		= 0x7FFFFFFF;
 
@@ -18,7 +18,7 @@ namespace glide
 		::gpk::view_const_string						Expand						= "";
 	};
 
-	::gpk::error_t									queryLoad					(::glide::SQuery& query, const ::gpk::view_array<const ::gpk::TKeyValConstString> keyvals);
+	::gpk::error_t									loadQuery				(::glide::SQuery& query, const ::gpk::view_array<const ::gpk::TKeyValConstString> keyvals);
 
 	typedef ::gpk::SKeyVal<::gpk::view_const_string, ::gpk::SJSONFile> TKeyValDB;
 
@@ -27,7 +27,7 @@ namespace glide
 		::glide::SQuery									Query						= {};
 	};
 
-	::gpk::error_t									generate_output_for_db		(::glide::SGlideApp & app, const ::gpk::view_const_string & databaseName, ::gpk::array_pod<char_t> & output);
+	::gpk::error_t									generate_output_for_db		(::glide::SGlideApp & app, const ::gpk::view_const_string & databaseName, int32_t detail, ::gpk::array_pod<char_t> & output);
 }
 
 

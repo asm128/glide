@@ -3,7 +3,6 @@
 #include "gpk_stdstring.h"
 #include "gpk_process.h"
 
-
 ::gpk::error_t									glide::validateMethod					(const ::gpk::view_const_string & method)	{
 	::gpk::array_pod<char_t>							environmentBlock; 
 	::gpk::array_obj<::gpk::TKeyValConstString>			environViews;
@@ -19,6 +18,21 @@
 	return 0;
 }
 
+::gpk::error_t									glide::loadDetail						(int32_t & detail)	{
+	::gpk::array_pod<char_t>							environmentBlock; 
+	::gpk::array_obj<::gpk::TKeyValConstString>			environViews;
+	::gpk::environmentBlockFromEnviron(environmentBlock);
+	::gpk::environmentBlockViews(environmentBlock, environViews);
+	for(uint32_t iKey = 0; iKey < environViews.size(); ++iKey) {
+		if(environViews[iKey].Key == ::gpk::view_const_string{"PATH_INFO"}) {
+			uint64_t _detail = (uint64_t)-1LL;
+			::gpk::stoull({&environViews[iKey].Val[1], environViews[iKey].Val.size() - 1}, &_detail);
+			detail = (int32_t)_detail;
+		}
+	}
+	return 0;
+}
+
 
 static	const ::gpk::TKeyValConstString			g_DataBases	[]							=	// pair of database name/alias
 	{	{"offices"		, "office"			}
@@ -26,7 +40,7 @@ static	const ::gpk::TKeyValConstString			g_DataBases	[]							=	// pair of datab
 	,	{"departments"	, "superdepartment"	}
 	};
 
-::gpk::error_t									glide::databaseLoad						(::gpk::array_obj<::glide::TKeyValDB> & dbs)		{
+::gpk::error_t									glide::loadDatabase						(::gpk::array_obj<::glide::TKeyValDB> & dbs)		{
 	dbs.resize(::gpk::size(g_DataBases));
 	for(uint32_t iDatabase = 0; iDatabase < ::gpk::size(g_DataBases); ++iDatabase) { 
 		dbs[iDatabase].Key								= g_DataBases[iDatabase].Key;
@@ -37,7 +51,7 @@ static	const ::gpk::TKeyValConstString			g_DataBases	[]							=	// pair of datab
 	return 0;
 }
 
-::gpk::error_t									glide::queryLoad						(::glide::SQuery& query, const ::gpk::view_array<const ::gpk::TKeyValConstString> keyvals)	{
+::gpk::error_t									glide::loadQuery						(::glide::SQuery& query, const ::gpk::view_array<const ::gpk::TKeyValConstString> keyvals)	{
 	::gpk::keyvalNumeric("offset"	, keyvals, query.Range.Offset	);
 	::gpk::keyvalNumeric("limit"	, keyvals, query.Range.Count	);
 	{
@@ -98,32 +112,48 @@ static	::gpk::error_t							generate_record_with_expansion			(::gpk::view_array<
 	return 0;
 }
 
-::gpk::error_t									glide::generate_output_for_db			(::glide::SGlideApp & app, const ::gpk::view_const_string & databaseName, ::gpk::array_pod<char_t> & output)					{
+::gpk::error_t									glide::generate_output_for_db			(::glide::SGlideApp & app, const ::gpk::view_const_string & databaseName, int32_t detail, ::gpk::array_pod<char_t> & output)					{
 	int32_t												indexDB									= ::gpk::find(databaseName, ::gpk::view_array<const ::gpk::SKeyVal<::gpk::view_const_string, ::gpk::SJSONFile>>{app.Databases.begin(), app.Databases.size()});
 	::gpk::SJSONReader									& dbReader								= app.Databases[indexDB].Val.Reader;
 	::gpk::SJSONNode									& jsonRoot								= *app.Databases[indexDB].Val.Reader.Tree[0];
-	if(0 == app.Query.Expand.size() && 0 >= app.Query.Range.Offset && app.Query.Range.Count >= jsonRoot.Children.size())
-		::gpk::jsonWrite(&jsonRoot, dbReader.View, output);
-	else {
-		output.push_back('[');
-		const uint32_t										stopRecord								= ::gpk::min(app.Query.Range.Offset + app.Query.Range.Count, jsonRoot.Children.size());
-		if(0 == app.Query.Expand.size()) {
-			for(uint32_t iRecord = app.Query.Range.Offset; iRecord < stopRecord; ++iRecord) {
-				::gpk::jsonWrite(jsonRoot.Children[iRecord], dbReader.View, output);
-				if((stopRecord - 1) > iRecord)
-					output.push_back(',');
-			}
-		}
+	if(detail != -1) { // display detail
+		if(0 == app.Query.Expand.size() && ((uint32_t)detail) >= jsonRoot.Children.size())
+			::gpk::jsonWrite(&jsonRoot, dbReader.View, output);
 		else {
-			::gpk::array_obj<::gpk::view_const_char>			fieldsToExpand;
-			::gpk::split(app.Query.Expand, '.', fieldsToExpand);
-			for(uint32_t iRecord = app.Query.Range.Offset; iRecord < stopRecord; ++iRecord) {
-				::generate_record_with_expansion(app.Databases, app.Databases[indexDB].Val, jsonRoot.Children[iRecord]->ObjectIndex, output, fieldsToExpand);
-				if((stopRecord - 1) > iRecord)
-					output.push_back(',');
+			if(0 == app.Query.Expand.size()) {
+				::gpk::jsonWrite(jsonRoot.Children[detail], dbReader.View, output);
+			}
+			else {
+				::gpk::array_obj<::gpk::view_const_char>			fieldsToExpand;
+				::gpk::split(app.Query.Expand, '.', fieldsToExpand);
+				::generate_record_with_expansion(app.Databases, app.Databases[indexDB].Val, jsonRoot.Children[detail]->ObjectIndex, output, fieldsToExpand);
 			}
 		}
-		output.push_back(']');
+	}
+	else {  // display multiple records
+		if(0 == app.Query.Expand.size() && 0 >= app.Query.Range.Offset && app.Query.Range.Count >= jsonRoot.Children.size())
+			::gpk::jsonWrite(&jsonRoot, dbReader.View, output);
+		else {
+			output.push_back('[');
+			const uint32_t										stopRecord								= ::gpk::min(app.Query.Range.Offset + app.Query.Range.Count, jsonRoot.Children.size());
+			if(0 == app.Query.Expand.size()) {
+				for(uint32_t iRecord = app.Query.Range.Offset; iRecord < stopRecord; ++iRecord) {
+					::gpk::jsonWrite(jsonRoot.Children[iRecord], dbReader.View, output);
+					if((stopRecord - 1) > iRecord)
+						output.push_back(',');
+				}
+			}
+			else {
+				::gpk::array_obj<::gpk::view_const_char>			fieldsToExpand;
+				::gpk::split(app.Query.Expand, '.', fieldsToExpand);
+				for(uint32_t iRecord = app.Query.Range.Offset; iRecord < stopRecord; ++iRecord) {
+					::generate_record_with_expansion(app.Databases, app.Databases[indexDB].Val, jsonRoot.Children[iRecord]->ObjectIndex, output, fieldsToExpand);
+					if((stopRecord - 1) > iRecord)
+						output.push_back(',');
+				}
+			}
+			output.push_back(']');
+		}
 	}
 	return 0;
 }

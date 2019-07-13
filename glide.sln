@@ -14,8 +14,16 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glide", "glide\glide.vcxproj", "{13896771-298A-45F5-9F55-65A0E2264CA8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "departments", "departments\departments.vcxproj", "{B5F6375C-024A-4613-A1C2-223C27A2F718}"
+	ProjectSection(ProjectDependencies) = postProject
+		{13896771-298A-45F5-9F55-65A0E2264CA8} = {13896771-298A-45F5-9F55-65A0E2264CA8}
+		{830AB681-B788-47D4-9767-BA4E0792F682} = {830AB681-B788-47D4-9767-BA4E0792F682}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "offices", "offices\offices.vcxproj", "{CB2B338A-0B29-4B2B-B7F9-56B68658D4D2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{13896771-298A-45F5-9F55-65A0E2264CA8} = {13896771-298A-45F5-9F55-65A0E2264CA8}
+		{830AB681-B788-47D4-9767-BA4E0792F682} = {830AB681-B788-47D4-9767-BA4E0792F682}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C42BE990-3407-44A6-A5D0-40FD23966DFE}"
 	ProjectSection(SolutionItems) = preProject
