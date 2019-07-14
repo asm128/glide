@@ -55,7 +55,7 @@
 
 static	const ::gpk::TKeyValConstString			g_DataBases	[]							=	// pair of database name/alias
 	{	{"offices"		, "office"			}
-	,	{"employees"	, "employee"		}	
+	,	{"employees"	, "manager"			}	
 	,	{"departments"	, "superdepartment"	}
 	};
 
