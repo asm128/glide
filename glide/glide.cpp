@@ -71,7 +71,7 @@ static	::gpk::error_t								createChildProcess
 	static constexpr const uint32_t							creationFlags			= (isUnicodeEnv ? CREATE_UNICODE_ENVIRONMENT : 0);
 	gpk_safe_closehandle(process.ProcessInfo.hProcess);
 	bSuccess											= CreateProcessA
-		( appPath.begin()	// Create the child process. 
+		( appPath.begin()			// Create the child process. 
 		, commandLine.begin()		// command line 
 		, nullptr					// process security attributes 
 		, nullptr					// primary thread security attributes 
@@ -87,30 +87,58 @@ static	::gpk::error_t								createChildProcess
 	return 0;
 }
 
+static	::gpk::error_t							cacheDatabase						(::glide::SGlideApp & appState, ::gpk::view_const_string dbName)		{
+	::gpk::array_pod<char_t>							szDBPath								= appState.CWD;
+	// This is something I will add later because first I need to implement a config.json that will allow us to set up paths 
+	// for a variety of situations like db caching, db storing, remote querying, etc.
+	//{	
+	//	
+	//	const ::gpk::view_const_string						szCacheFolder							= "gilde_cache";
+	//	if(szCacheFolder.size()) {
+	//		szDBPath.push_back('/');
+	//		szDBPath.append(szCacheFolder);
+	//	}
+	//	::gpk::pathCreate({szDBPath.begin(), szDBPath.size()});
+	//}
+
+	// I should add some function to encode command-line calls because using quotation marks this way is unhealthy
+	// Probably it would be better to do smth like :
+	::gpk::array_pod<char_t>							szCmdlineApp							= "C:\\Python37\\python.exe";
+	const ::gpk::view_const_string						szCmdLineFormat							= {
+		"C:\\Python37\\python.exe -c "
+		"	\"import requests; "
+		"	host	= \"\"https://rfy56yfcwk.execute-api.us-west-1.amazonaws.com/bigcorp/%s\"\"; "	// dbName
+		"	r		= requests.get(host, \"\"\"\"); "
+		"	f		= open(\"\"%s/%s.json\"\", \"\"w\"\"); "	// szCachePath/dbName.json
+		"	f.write(str(r.text)); "
+		"	f.close(); "
+		};
+	::gpk::array_pod<char_t>							szCmdlineFinal							= {};
+	szCmdlineFinal.resize(szCmdLineFormat.size() + dbName.size() * 2 + szDBPath.size() * 2 + 32);	// I made this buffer larger just in case I'm missing some calculation. 
+	sprintf_s(&szCmdlineFinal[0], szCmdlineFinal.size(), &szCmdLineFormat[0], &dbName[0], &szDBPath[0], &dbName[0]);
+	{	// call process
+		appState.Process.ProcessInfo.hProcess	= INVALID_HANDLE_VALUE;
+		::gpk::array_pod<char_t>							environmentBlock; 
+		::gpk::environmentBlockFromEnviron(environmentBlock);
+		gpk_necall(::createChildProcess(appState.Process, environmentBlock, szCmdlineApp, szCmdlineFinal), "Failed to create child process: %s.", szCmdlineApp.begin());	// Create the child process. 
+		while(true) {
+			DWORD												exitCode				= 0;
+			GetExitCodeProcess(appState.Process.ProcessInfo.hProcess, &exitCode);
+			if(STILL_ACTIVE != exitCode)
+				break; 
+			::gpk::sleep(100);
+		}
+	}
+	return 0;
+}
+
 ::gpk::error_t									glide::loadDatabase						(::glide::SGlideApp & appState)		{
 	::gpk::array_obj<::glide::TKeyValDB>				& dbs									= appState.Databases;
 	::glide::SQuery										& query									= appState.Query;
+	::cacheDatabase(appState, "employees");
 	query.Expand;
 	dbs.resize(::gpk::size(g_DataBases));
-	::gpk::array_pod<char_t>							szCmdlineApp							= "C:\\Python37\\python.exe";
-	::gpk::array_pod<char_t>							szCmdlineFinal							= ::gpk::view_const_string{"C:\\Python37\\python.exe -c \"import requests; host = \"\"https://rfy56yfcwk.execute-api.us-west-1.amazonaws.com/bigcorp/employees\"\"; r = requests.get(host, \"\"\"\"); f = open(\"\""};
-	szCmdlineFinal.append(appState.CWD);
-	szCmdlineFinal.append(::gpk::view_const_string{"/employees.json\"\", \"\"w\"\"); f.write(str(r.text)); f.close();\""});
-	{	// llamar proceso
-		appState.ThreadState.Process.ProcessInfo.hProcess	= INVALID_HANDLE_VALUE;
-		::gpk::array_pod<char_t>							environmentBlock; 
-		::gpk::environmentBlockFromEnviron(environmentBlock);
-		gerror_if(errored(::createChildProcess(appState.ThreadState.Process, environmentBlock, szCmdlineApp, szCmdlineFinal)), "Failed to create child process: %s.", szCmdlineApp.begin());	// Create the child process. 
-		while(true) {
-			DWORD												exitCode				= 0;
-			GetExitCodeProcess(appState.ThreadState.Process.ProcessInfo.hProcess, &exitCode);
-			if(STILL_ACTIVE != exitCode)
-				break; 
-			::gpk::sleep(5);
-		}
-	}
-	info_printf("");
-	for(uint32_t iDatabase = 0; iDatabase < ::gpk::size(g_DataBases); ++iDatabase) { 
+	for(uint32_t iDatabase = 0; iDatabase < ::gpk::size(g_DataBases); ++iDatabase) {	// read database documents after loading from remote
 		dbs[iDatabase].Key								= g_DataBases[iDatabase].Key;
 		::gpk::array_pod<char_t>							filename								= g_DataBases[iDatabase].Key;
 		filename.append(".json");

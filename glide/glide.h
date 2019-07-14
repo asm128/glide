@@ -18,31 +18,16 @@ namespace glide
 		::gpk::view_const_string					Expand						= "";
 	};
 
-	struct SProcessHandles {
-		HANDLE										ChildStd_IN_Read			= INVALID_HANDLE_VALUE;
-		HANDLE										ChildStd_IN_Write			= INVALID_HANDLE_VALUE;
-		HANDLE										ChildStd_OUT_Read			= INVALID_HANDLE_VALUE;
-		HANDLE										ChildStd_OUT_Write			= INVALID_HANDLE_VALUE;
-		HANDLE										ChildStd_ERR_Read			= INVALID_HANDLE_VALUE;
-		HANDLE										ChildStd_ERR_Write			= INVALID_HANDLE_VALUE;
-	};
 
 	struct SProcess {
 		PROCESS_INFORMATION							ProcessInfo					= {}; 
 		STARTUPINFOA								StartInfo					= {sizeof(STARTUPINFOA)};
 	};
 
-	struct SThreadStateRead { 
-		::glide::SProcessHandles					IOHandles			;
-		::glide::SProcess							Process				;
-		::gpk::array_pod<byte_t>					ReadBytes			;
-		::gpk::refcount_t							DoneReading			= 0;
-	};
-
 	struct SGlideApp {
 		::gpk::array_obj<TKeyValDB>					Databases					= {};
 		::glide::SQuery								Query						= {};
-		::glide::SThreadStateRead					ThreadState					= {};
+		::glide::SProcess							Process				;
 		::gpk::array_pod<char_t>					CWD							= {};
 	};
 
