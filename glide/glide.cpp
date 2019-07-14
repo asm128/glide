@@ -97,9 +97,10 @@ static	::gpk::error_t							cacheDatabase						(::glide::SGlideApp & appState, :
 	//	if(szCacheFolder.size()) {
 	//		szDBPath.push_back('/');
 	//		szDBPath.append(szCacheFolder);
+	//		::gpk::pathCreate({szDBPath.begin(), szDBPath.size()});
 	//	}
-	//	::gpk::pathCreate({szDBPath.begin(), szDBPath.size()});
 	//}
+	szDBPath.push_back(0);
 
 	// I should add some function to encode command-line calls because using quotation marks this way is unhealthy
 	// Probably it would be better to do smth like :
@@ -107,11 +108,11 @@ static	::gpk::error_t							cacheDatabase						(::glide::SGlideApp & appState, :
 	const ::gpk::view_const_string						szCmdLineFormat							= {
 		"C:\\Python37\\python.exe -c "
 		"	\"import requests; "
-		"	host	= \"\"https://rfy56yfcwk.execute-api.us-west-1.amazonaws.com/bigcorp/%s\"\"; "	// dbName
-		"	r		= requests.get(host, \"\"\"\"); "
-		"	f		= open(\"\"%s/%s.json\"\", \"\"w\"\"); "	// szCachePath/dbName.json
-		"	f.write(str(r.text)); "
-		"	f.close(); "
+		"host	= \"\"https://rfy56yfcwk.execute-api.us-west-1.amazonaws.com/bigcorp/%s\"\"; "	// dbName
+		"r		= requests.get(host, \"\"\"\"); "
+		"f		= open(\"\"%s/%s.json\"\", \"\"w\"\"); "	// szCachePath/dbName.json
+		"f.write(str(r.text)); "
+		"f.close(); "
 		};
 	::gpk::array_pod<char_t>							szCmdlineFinal							= {};
 	szCmdlineFinal.resize(szCmdLineFormat.size() + dbName.size() * 2 + szDBPath.size() * 2 + 32);	// I made this buffer larger just in case I'm missing some calculation. 
