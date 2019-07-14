@@ -201,6 +201,8 @@ static	::gpk::error_t								createChildProcess
 ::gpk::error_t									glide::loadQuery						(::glide::SQuery& query, const ::gpk::view_array<const ::gpk::TKeyValConstString> keyvals)	{
 	::gpk::keyvalNumeric("offset"	, keyvals, query.Range.Offset	);
 	::gpk::keyvalNumeric("limit"	, keyvals, query.Range.Count	);
+	if(query.Range.Offset > 0 )
+		--query.Range.Offset;
 	{
 		::gpk::error_t										indexExpand								= ::gpk::find("expand", keyvals);
 		if(-1 != indexExpand) 
