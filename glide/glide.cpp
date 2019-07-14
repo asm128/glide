@@ -35,7 +35,6 @@
 			}
 		}
 	}
-	//"" : "C:/asm128_test/x64.Debug/test_cgi_environ.exe"
 	return 0;
 }
 
@@ -181,15 +180,16 @@ static	::gpk::error_t							generate_record_with_expansion			(::gpk::view_array<
 				for(uint32_t iDatabase = 0; iDatabase < databases.size(); ++iDatabase) {
 					::glide::TKeyValDB									& childDatabase							= databases[iDatabase];
 					if(::gpk::view_const_char{childDatabase.Key.begin(), childDatabase.Key.size()-1} == fieldToExpand || g_DataBases[iDatabase].Val == fieldToExpand) {
+						::gpk::SJSONNode									& childRoot								= *childDatabase.Val.Reader.Tree[0];
 						if(1 >= fieldsToExpand.size()) {
-							if(indexRecordToExpand < childDatabase.Val.Reader.Tree[0]->Children.size())
-								::gpk::jsonWrite(childDatabase.Val.Reader.Tree[0]->Children[(uint32_t)indexRecordToExpand], childDatabase.Val.Reader.View, output);
+							if(indexRecordToExpand < childRoot.Children.size())
+								::gpk::jsonWrite(childRoot.Children[(uint32_t)indexRecordToExpand], childDatabase.Val.Reader.View, output);
 							else
 								::gpk::jsonWrite(database.Reader.Tree[indexVal], database.Reader.View, output);
 						}
 						else {
-							if(indexRecordToExpand < childDatabase.Val.Reader.Tree[0]->Children.size())
-								::generate_record_with_expansion(databases, childDatabase.Val, childDatabase.Val.Reader.Tree[0]->Children[(uint32_t)indexRecordToExpand]->ObjectIndex, output, {&fieldsToExpand[1], fieldsToExpand.size()-1});
+							if(indexRecordToExpand < childRoot.Children.size())
+								::generate_record_with_expansion(databases, childDatabase.Val, childRoot.Children[(uint32_t)indexRecordToExpand]->ObjectIndex, output, {&fieldsToExpand[1], fieldsToExpand.size()-1});
 							else
 								::gpk::jsonWrite(database.Reader.Tree[indexVal], database.Reader.View, output);
 						}
