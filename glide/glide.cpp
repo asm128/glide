@@ -39,7 +39,6 @@
 	return 0;
 }
 
-
 ::gpk::error_t									glide::loadDetail						(int32_t & detail)	{
 	::gpk::array_pod<char_t>							environmentBlock; 
 	::gpk::array_obj<::gpk::TKeyValConstString>			environViews;
@@ -162,16 +161,9 @@ static	::gpk::error_t								createChildProcess
 	query.Expand;
 	dbs.resize(::gpk::size(g_DataBases));
 	::gpk::array_pod<char_t>							szCmdlineApp							= "C:\\Python37\\python.exe";
-#define DOBLE_COMILLA
-#ifdef DOBLE_COMILLA
 	::gpk::array_pod<char_t>							szCmdlineFinal							= ::gpk::view_const_string{"C:\\Python37\\python.exe -c \"import requests; host = \"\"https://rfy56yfcwk.execute-api.us-west-1.amazonaws.com/bigcorp/employees\"\"; r = requests.get(host, \"\"\"\"); f = open(\"\""};
 	szCmdlineFinal.append(appState.CWD);
 	szCmdlineFinal.append(::gpk::view_const_string{"/employees.json\"\", \"\"w\"\"); f.write(str(r.text)); f.close();\""});
-#else
-	::gpk::array_pod<char_t>							szCmdlineFinal							= ::gpk::view_const_string{"C:\\Python37\\python.exe -c \"import requests; host = \"https://rfy56yfcwk.execute-api.us-west-1.amazonaws.com/bigcorp/employees\"; r = requests.get(host, \"\"); f = open(\""};
-	szCmdlineFinal.append(appState.CWD);
-	szCmdlineFinal.append(::gpk::view_const_string{"/employees.json\", \"w\"); f.write(str(r.text)); f.close();"});
-#endif
 	{	// llamar proceso
 		::initHandles(appState.ThreadState.IOHandles);
 		appState.ThreadState.Process.StartInfo.hStdError	= appState.ThreadState.IOHandles.ChildStd_ERR_Write;
