@@ -3,12 +3,15 @@
 #include "gpk_stdstring.h"
 #include "gpk_process.h"
 #include "gpk_storage.h"
+#include "gpk_cgi.h"
 
 ::gpk::error_t									glide::validateMethod					(const ::gpk::view_const_string & method)	{
 	::gpk::array_pod<char_t>							environmentBlock; 
 	::gpk::array_obj<::gpk::TKeyValConstString>			environViews;
 	::gpk::environmentBlockFromEnviron(environmentBlock);
 	::gpk::environmentBlockViews(environmentBlock, environViews);
+	::gpk::writeCGIEnvironToFile(environViews);																																		\
+
 	for(uint32_t iKey = 0; iKey < environViews.size(); ++iKey) {
 		if(environViews[iKey].Key == ::gpk::view_const_string{"REQUEST_METHOD"}) {
 			if(environViews[iKey].Val == method) {
